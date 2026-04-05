@@ -1,0 +1,9 @@
+{
+  "name": "hotel-pricing-api",
+  "main": "server.js",
+  "dependencies": {
+    "express": "*",
+    "pg": "*",
+    "bcryptjs": "*"
+  }
+}
