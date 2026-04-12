@@ -17,7 +17,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// ── HEALTH CHECK ───────────────────────────────────
+// HEALTH CHECK
 app.get('/', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -27,7 +27,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-// ── LOGIN ──────────────────────────────────────────
+// LOGIN
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -42,7 +42,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// ── GET ALL HOTELS ─────────────────────────────────
+// GET ALL HOTELS
 app.get('/hotels', async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM hotels ORDER BY name ASC');
@@ -52,7 +52,7 @@ app.get('/hotels', async (req, res) => {
   }
 });
 
-// ── ADD HOTEL WITH AI ──────────────────────────────
+// ADD HOTEL WITH AI
 app.post('/hotels/add-with-ai', async (req, res) => {
   try {
     const { raw_contract } = req.body;
@@ -66,7 +66,7 @@ app.post('/hotels/add-with-ai', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-5',
         max_tokens: 4000,
         messages: [{
           role: 'user',
@@ -187,7 +187,7 @@ ${raw_contract}`
   }
 });
 
-// ── UPDATE HOTEL ───────────────────────────────────
+// UPDATE HOTEL
 app.put('/hotels/:id', async (req, res) => {
   try {
     const { contract_data } = req.body;
@@ -201,7 +201,7 @@ app.put('/hotels/:id', async (req, res) => {
   }
 });
 
-// ── DELETE HOTEL ───────────────────────────────────
+// DELETE HOTEL
 app.delete('/hotels/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM hotels WHERE id=$1', [req.params.id]);
@@ -211,7 +211,7 @@ app.delete('/hotels/:id', async (req, res) => {
   }
 });
 
-// ── GET AI PRICING NOTES ───────────────────────────
+// GET AI PRICING NOTES
 app.post('/price', async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -224,19 +224,22 @@ app.post('/price', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
     const d = await r.json();
+    if (!d.content || !d.content[0]) {
+      return res.status(500).json({ error: 'Claude API error', details: d });
+    }
     res.json({ result: d.content[0].text });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// ── SAVE QUOTE ─────────────────────────────────────
+// SAVE QUOTE
 app.post('/quotes', async (req, res) => {
   try {
     const q = req.body;
@@ -260,7 +263,7 @@ app.post('/quotes', async (req, res) => {
   }
 });
 
-// ── GET QUOTE HISTORY ──────────────────────────────
+// GET QUOTE HISTORY
 app.get('/quotes', async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM quotes ORDER BY created_at DESC LIMIT 200');
