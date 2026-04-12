@@ -13,7 +13,11 @@ app.use((req, res, next) => {
 });
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  host: 'db.remqgcpjusasdvpvxpah.supabase.co',
+  port: 5432,
+  database: 'postgres',
+  user: 'postgres',
+  password: process.env.DB_PASSWORD,
   ssl: { rejectUnauthorized: false }
 });
 
