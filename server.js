@@ -197,7 +197,7 @@ Extract every number, date range, and policy exactly as stated.
 Use null for any field not in the contract.
 
 CONTRACT:
-\${raw_contract}`
+${raw_contract}`
         }]
       })
     });
