@@ -70,9 +70,44 @@ app.post('/hotels/add-with-ai', async (req, res) => {
         max_tokens: 4000,
         messages: [{
           role: 'user',
-          content: `You are a hotel contract data extraction specialist.
+          content: `You are a hotel contract data extraction specialist for Happy Travels Oman.
 Read the hotel contract below and extract ALL information into a precise JSON object.
 Respond ONLY with valid JSON — no markdown, no backticks, no explanation, just raw JSON.
+
+CRITICAL RULES FOR SEASONS:
+- ALWAYS use only these 3 season keys: "low", "high", "peak"
+- If contract uses "shoulder" season map it to "high"
+- If contract uses "standard" season map it to "high"
+- If contract uses any other season name map it to the closest of low/high/peak
+- Each season value MUST be an array of objects with "from" and "to" date strings in YYYY-MM-DD format
+- If a season has multiple date ranges include ALL ranges as separate objects in the array
+- NEVER use null for seasons — use empty array [] if no dates for that season
+- All dates MUST be in YYYY-MM-DD format
+
+CRITICAL RULES FOR ROOMS:
+- Each room MUST have "low", "high", "peak" numeric price fields
+- Always use DOUBLE/DBL rate as the room rate — never SGL
+- If contract uses shoulder/standard rates use those as "high" rates
+- If a room has no peak rate use the high rate as peak
+- If a room has no low rate use the high rate as low
+- If contract uses peak supplement add it to high rate to get peak rate
+- NEVER leave low/high/peak as null if the room has any rate at all
+- If rates are per person multiply by 2 for double occupancy
+
+CRITICAL RULES FOR BOARDS:
+- Always normalize codes: BB for bed and breakfast, HB for half board, FB for full board, RO for room only
+- adult_ppn and child6_11_ppn must always be numbers — use 0 if included in room rate
+
+CRITICAL RULES FOR ARRAYS:
+- transfers must always be an array — use [] if none
+- extras must always be an array — use [] if none
+- promotions must always be an array — use [] if none
+
+CRITICAL RULES FOR DATES AND GENERAL:
+- All dates MUST be in YYYY-MM-DD format
+- If no end date use 2027-12-31
+- If no start date use 2026-01-01
+- In special_notes always state clearly if rates are inclusive or exclusive of taxes
 
 Required JSON structure:
 {
@@ -162,7 +197,7 @@ Extract every number, date range, and policy exactly as stated.
 Use null for any field not in the contract.
 
 CONTRACT:
-${raw_contract}`
+\${raw_contract}`
         }]
       })
     });
