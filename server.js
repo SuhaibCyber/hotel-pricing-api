@@ -70,7 +70,7 @@ app.post('/hotels/add-with-ai', async (req, res) => {
         max_tokens: 4000,
         messages: [{
           role: 'user',
-          content: `You are a hotel contract data extraction specialist for Happy Travels Oman.
+          content: `You are a hotel contract data extraction specialist for Happy Travels Oman travel agency.
 Read the hotel contract below and extract ALL information into a precise JSON object.
 Respond ONLY with valid JSON — no markdown, no backticks, no explanation, just raw JSON.
 
@@ -96,7 +96,29 @@ CRITICAL RULES FOR ROOMS:
 
 CRITICAL RULES FOR BOARDS:
 - Always normalize codes: BB for bed and breakfast, HB for half board, FB for full board, RO for room only
-- adult_ppn and child6_11_ppn must always be numbers — use 0 if included in room rate
+- adult_ppn and child6_11_ppn must always be numbers — use 0 if board is already included in room rate
+- If contract says rates are on HB basis set boards with HB adult_ppn = 0 (already included) and add BB as negative supplement if available
+
+CRITICAL RULES FOR EXTRA BED:
+- extra_bed must have adult_winter, adult_summer, adult_peak, child_winter, child_summer, child_peak fields
+- Winter months are October November December January February March April
+- Summer months are May June July August September
+- If contract has only one extra bed rate use it for both winter and summer
+- extra_bed_on_request must be true if contract says extra bed is subject to availability
+- max_extra_beds_per_room must reflect the contract maximum (usually 1 or 2)
+
+CRITICAL RULES FOR CHILDREN POLICY:
+- free_age_limit is the maximum age that is FREE (e.g. 5 means ages 0 to 5 are free, 6 means ages 0 to 6 are free)
+- paid_age_from and paid_age_to define the paid child range (e.g. 6 and 12, or 6 and 11)
+- under6_free should be true if children under that age are free
+- max_free_children is the maximum number of free children per room (usually 1)
+- board_restriction_dates must list any dates when HB/FB supplements are NOT available
+
+CRITICAL RULES FOR VAT:
+- vat_info.included must be true if rates already include ALL taxes
+- vat_info.included must be false if VAT is additional to the rates
+- vat_info.rate must be the total tax percentage (e.g. 23.27 for Mysk, 5 for SAMA)
+- vat_info.note should describe exactly what taxes are included or excluded
 
 CRITICAL RULES FOR ARRAYS:
 - transfers must always be an array — use [] if none
@@ -107,7 +129,6 @@ CRITICAL RULES FOR DATES AND GENERAL:
 - All dates MUST be in YYYY-MM-DD format
 - If no end date use 2027-12-31
 - If no start date use 2026-01-01
-- In special_notes always state clearly if rates are inclusive or exclusive of taxes
 
 Required JSON structure:
 {
@@ -124,7 +145,7 @@ Required JSON structure:
   "rooms": [
     {
       "name": "room type name",
-      "size": "60sqm",
+      "size": null,
       "low": 0,
       "high": 0,
       "peak": 0,
@@ -143,17 +164,31 @@ Required JSON structure:
     }
   ],
   "extra_bed": {
-    "adult": 0,
+    "adult_winter": 0,
+    "adult_summer": 0,
     "adult_peak": 0,
-    "child6_11": 0,
-    "child6_11_peak": 0
+    "child_winter": 0,
+    "child_summer": 0,
+    "child_peak": 0,
+    "extra_bed_on_request": true,
+    "max_extra_beds_per_room": 1
   },
   "children_policy": {
     "under6_free": true,
+    "free_age_limit": 5,
+    "paid_age_from": 6,
+    "paid_age_to": 12,
+    "max_free_children": 1,
     "age6_11_breakfast_ppn": 0,
-    "age6_11_meal_discount": 0.5
+    "age6_11_meal_discount": 0.5,
+    "board_restriction_dates": []
   },
   "third_adult_supplement": 0,
+  "vat_info": {
+    "included": true,
+    "rate": 0,
+    "note": "description of taxes included"
+  },
   "transfers": [
     {"name": "transfer name", "price": 0, "type": "one_way"}
   ],
@@ -197,7 +232,7 @@ Extract every number, date range, and policy exactly as stated.
 Use null for any field not in the contract.
 
 CONTRACT:
-${raw_contract}`
+\${raw_contract}`
         }]
       })
     });
